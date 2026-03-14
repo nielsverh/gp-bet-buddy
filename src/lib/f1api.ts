@@ -48,9 +48,10 @@ export async function fetchRaceResults(season: number, round: number): Promise<R
 }
 
 export function isRetirement(status: string): boolean {
-  if (status === 'Finished') return false;
+  const finishedStatuses = ['Finished', 'Lapped', '+1 Lap', '+2 Laps', '+3 Laps'];
+  if (finishedStatuses.includes(status)) return false;
   if (/^\+\d+ [Ll]aps?$/.test(status)) return false;
-  return true; // DNF, DNS, Accident, Engine, etc.
+  return true;
 }
 
 export function isDNS(status: string): boolean {
