@@ -238,7 +238,7 @@ export default function Races() {
                   <div className="mt-4 p-4 rounded-lg bg-secondary/50">
                     <h4 className="text-sm font-semibold mb-2 text-muted-foreground">Race Results</h4>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 text-sm">
-                      {raceResults.slice(0, 20).map(r => (
+                      {raceResults.map(r => (
                         <div key={r.position} className="flex items-center gap-2 py-0.5">
                           <span className="font-mono text-muted-foreground w-6 text-right">P{r.position}</span>
                           <span className={isRetirement(r.status) ? 'text-destructive line-through' : ''}>
