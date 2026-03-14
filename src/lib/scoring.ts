@@ -1,6 +1,6 @@
 import type { Bet, RaceResult, RaceScore } from '@/types/f1';
 import { F1_POINTS_SCALE } from '@/types/f1';
-import { isRetirement } from './f1api';
+import { isRetirement, isDNS } from './f1api';
 
 export function calculateScore(bet: Bet, results: RaceResult[]): RaceScore {
   const score: RaceScore = {
@@ -20,7 +20,6 @@ export function calculateScore(bet: Bet, results: RaceResult[]): RaceScore {
     const diff = Math.abs(winnerResult.position - 1);
     score.gpWinnerPoints = diff < F1_POINTS_SCALE.length ? F1_POINTS_SCALE[diff] : 0;
   }
-  // If driver retired → 0 points (already 0)
 
   // P10 scoring (symmetric)
   const p10Result = results.find(r => r.driver.driverId === bet.p10);
@@ -29,19 +28,12 @@ export function calculateScore(bet: Bet, results: RaceResult[]): RaceScore {
     score.p10Points = diff < F1_POINTS_SCALE.length ? F1_POINTS_SCALE[diff] : 0;
   }
 
-  // First retirement scoring
-  const retirees = results.filter(r => isRetirement(r.status));
+  // First retirement scoring (exclude DNS)
+  const retirees = results.filter(r => isRetirement(r.status) && !isDNS(r.status));
   if (retirees.length > 0 && bet.firstRetirement) {
-    // The first retiree is the one with the highest position number (last classified)
-    // Actually in F1 results, retirees are listed at the bottom by laps completed
-    // The first to retire has the fewest laps, which is the last in the results
+    // Retiree with highest position number = fewest laps completed = retired first
     const sortedRetirees = retirees.sort((a, b) => b.position - a.position);
-    const firstRetiree = sortedRetirees[sortedRetirees.length - 1];
-    // Actually, the retiree with the highest position number retired last (more laps completed)
-    // The one who retired first completed fewer laps → lowest position among retirees is wrong
-    // In Ergast data, retirees are ordered by laps completed, the last one in results retired first
-    // Let's use: first retiree = last position number (most laps NOT completed)
-    const firstToRetire = sortedRetirees[0]; // highest position number = retired earliest (fewest laps)
+    const firstToRetire = sortedRetirees[0];
     
     if (firstToRetire.driver.driverId === bet.firstRetirement) {
       score.retirementPoints = 10;

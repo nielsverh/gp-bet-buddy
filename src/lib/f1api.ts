@@ -48,6 +48,11 @@ export async function fetchRaceResults(season: number, round: number): Promise<R
 }
 
 export function isRetirement(status: string): boolean {
-  const finished = ['Finished', '+1 Lap', '+2 Laps', '+3 Laps', '+4 Laps', '+5 Laps', '+6 Laps'];
-  return !finished.some(s => status.startsWith(s));
+  if (status === 'Finished') return false;
+  if (/^\+\d+ [Ll]aps?$/.test(status)) return false;
+  return true; // DNF, DNS, Accident, Engine, etc.
+}
+
+export function isDNS(status: string): boolean {
+  return status === 'DNS' || status === 'Did not start';
 }
