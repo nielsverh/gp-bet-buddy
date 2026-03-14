@@ -186,51 +186,30 @@ export default function Races() {
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div>
                           <label className="text-xs text-muted-foreground mb-1 block">GP Winner (P1)</label>
-                          <Select
+                          <DriverPicker
+                            drivers={drivers}
                             value={getCurrentBetValue(player.id, race.round, 'gpWinner')}
-                            onValueChange={v => updateLocalBet(player.id, race.round, 'gpWinner', v)}
-                          >
-                            <SelectTrigger><SelectValue placeholder="Pick driver" /></SelectTrigger>
-                            <SelectContent>
-                              {drivers.map(d => (
-                                <SelectItem key={d.driverId} value={d.driverId}>
-                                  {d.givenName} {d.familyName}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                            onSelect={v => updateLocalBet(player.id, race.round, 'gpWinner', v)}
+                            placeholder="Type driver name..."
+                          />
                         </div>
                         <div>
                           <label className="text-xs text-muted-foreground mb-1 block">10th Place (P10)</label>
-                          <Select
+                          <DriverPicker
+                            drivers={drivers}
                             value={getCurrentBetValue(player.id, race.round, 'p10')}
-                            onValueChange={v => updateLocalBet(player.id, race.round, 'p10', v)}
-                          >
-                            <SelectTrigger><SelectValue placeholder="Pick driver" /></SelectTrigger>
-                            <SelectContent>
-                              {drivers.map(d => (
-                                <SelectItem key={d.driverId} value={d.driverId}>
-                                  {d.givenName} {d.familyName}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                            onSelect={v => updateLocalBet(player.id, race.round, 'p10', v)}
+                            placeholder="Type driver name..."
+                          />
                         </div>
                         <div>
                           <label className="text-xs text-muted-foreground mb-1 block">First to Retire (DNF)</label>
-                          <Select
+                          <DriverPicker
+                            drivers={drivers}
                             value={getCurrentBetValue(player.id, race.round, 'firstRetirement')}
-                            onValueChange={v => updateLocalBet(player.id, race.round, 'firstRetirement', v)}
-                          >
-                            <SelectTrigger><SelectValue placeholder="Pick driver" /></SelectTrigger>
-                            <SelectContent>
-                              {drivers.map(d => (
-                                <SelectItem key={d.driverId} value={d.driverId}>
-                                  {d.givenName} {d.familyName}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                            onSelect={v => updateLocalBet(player.id, race.round, 'firstRetirement', v)}
+                            placeholder="Type driver name..."
+                          />
                         </div>
                       </div>
                     </div>
