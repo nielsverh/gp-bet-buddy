@@ -1,8 +1,6 @@
 import type { Player, Bet, RaceScore } from '@/types/f1';
 import { PLAYER_COLORS } from '@/types/f1';
 
-const STORAGE_KEY = 'f1-betting-poule';
-
 interface StoredData {
   players: Player[];
   bets: Bet[];
@@ -10,21 +8,56 @@ interface StoredData {
   currentSeason: number;
 }
 
-function getAll(): StoredData {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) {
-    return {
-      players: [],
-      bets: [],
-      scores: [],
-      currentSeason: new Date().getFullYear(),
-    };
+const DEFAULT_DATA: StoredData = {
+  players: [],
+  bets: [],
+  scores: [],
+  currentSeason: new Date().getFullYear(),
+};
+
+// In-memory cache to avoid async everywhere
+let cache: StoredData | null = null;
+let saveTimeout: ReturnType<typeof setTimeout> | null = null;
+
+// Initial load from server
+export async function initStorage(): Promise<void> {
+  try {
+    const res = await fetch('/api/data');
+    if (res.ok) {
+      cache = await res.json();
+      return;
+    }
+  } catch {
+    // API not available, fall back to localStorage
   }
-  return JSON.parse(raw);
+  const raw = localStorage.getItem('f1-betting-poule');
+  cache = raw ? JSON.parse(raw) : { ...DEFAULT_DATA };
+}
+
+function getAll(): StoredData {
+  if (!cache) {
+    // Sync fallback for first render before initStorage completes
+    const raw = localStorage.getItem('f1-betting-poule');
+    cache = raw ? JSON.parse(raw) : { ...DEFAULT_DATA };
+  }
+  return cache;
 }
 
 function saveAll(data: StoredData) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  cache = data;
+  // Also save to localStorage as immediate backup
+  localStorage.setItem('f1-betting-poule', JSON.stringify(data));
+  // Debounce server save
+  if (saveTimeout) clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(() => {
+    fetch('/api/data', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }).catch(() => {
+      // Server not available, localStorage is the fallback
+    });
+  }, 300);
 }
 
 export function getPlayers(): Player[] {
