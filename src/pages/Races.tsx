@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import DriverPicker from '@/components/DriverPicker';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Flag, CheckCircle2, Clock, ChevronDown, ChevronUp, Calculator } from 'lucide-react';
+import { Flag, CheckCircle2, Clock, ChevronDown, ChevronUp, Calculator, RefreshCw } from 'lucide-react';
 import { fetchRaces, fetchDrivers, fetchRaceResults, isRetirement } from '@/lib/f1api';
 import { getPlayers, getBets, saveBet, saveScores, getCurrentSeason, getScores } from '@/lib/storage';
 import { calculateScore } from '@/lib/scoring';

@@ -92,11 +92,22 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <h2 className="text-3xl font-extrabold tracking-tight">{season} Season</h2>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Flag className="w-4 h-4" />
-          {racesCompleted} / {races.length} races
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={downloadCSV}>
+            <Download className="w-4 h-4 mr-1" />
+            Export CSV
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+            <Upload className="w-4 h-4 mr-1" />
+            Import CSV
+          </Button>
+          <input ref={fileInputRef} type="file" accept=".csv" className="hidden" onChange={handleImport} />
+          <div className="flex items-center gap-2 text-sm text-muted-foreground ml-2">
+            <Flag className="w-4 h-4" />
+            {racesCompleted} / {races.length} races
+          </div>
         </div>
       </div>
 
