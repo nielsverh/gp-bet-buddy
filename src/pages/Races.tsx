@@ -14,6 +14,7 @@ import type { Bet, Driver, Race, RaceResult } from '@/types/f1';
 export default function Races() {
   const season = getCurrentSeason();
   const players = getPlayers();
+  const queryClient = useQueryClient();
   const [expandedRace, setExpandedRace] = useState<number | null>(null);
   const [localBets, setLocalBets] = useState<Record<string, Partial<Bet>>>({});
   const [, forceUpdate] = useState(0);
@@ -28,11 +29,17 @@ export default function Races() {
     queryFn: () => fetchDrivers(season),
   });
 
-  const { data: raceResults, isLoading: resultsLoading } = useQuery({
+  const { data: raceResults, isLoading: resultsLoading, isFetching: resultsFetching } = useQuery({
     queryKey: ['results', season, expandedRace],
     queryFn: () => expandedRace ? fetchRaceResults(season, expandedRace) : Promise.resolve([]),
     enabled: !!expandedRace,
   });
+
+  function handleRefreshResults() {
+    if (!expandedRace) return;
+    queryClient.invalidateQueries({ queryKey: ['results', season, expandedRace] });
+    toast.success('Resultaten worden opnieuw opgehaald...');
+  }
 
   const bets = getBets(season);
   const scores = getScores(season);
