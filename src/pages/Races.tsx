@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import DriverPicker from '@/components/DriverPicker';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Flag, CheckCircle2, Clock, ChevronDown, ChevronUp, Calculator } from 'lucide-react';
+import { Flag, CheckCircle2, Clock, ChevronDown, ChevronUp, Calculator, RefreshCw } from 'lucide-react';
 import { fetchRaces, fetchDrivers, fetchRaceResults, isRetirement } from '@/lib/f1api';
 import { getPlayers, getBets, saveBet, saveScores, getCurrentSeason, getScores } from '@/lib/storage';
 import { calculateScore } from '@/lib/scoring';
@@ -14,6 +14,7 @@ import type { Bet, Driver, Race, RaceResult } from '@/types/f1';
 export default function Races() {
   const season = getCurrentSeason();
   const players = getPlayers();
+  const queryClient = useQueryClient();
   const [expandedRace, setExpandedRace] = useState<number | null>(null);
   const [localBets, setLocalBets] = useState<Record<string, Partial<Bet>>>({});
   const [, forceUpdate] = useState(0);
@@ -28,11 +29,17 @@ export default function Races() {
     queryFn: () => fetchDrivers(season),
   });
 
-  const { data: raceResults, isLoading: resultsLoading } = useQuery({
+  const { data: raceResults, isLoading: resultsLoading, isFetching: resultsFetching } = useQuery({
     queryKey: ['results', season, expandedRace],
     queryFn: () => expandedRace ? fetchRaceResults(season, expandedRace) : Promise.resolve([]),
     enabled: !!expandedRace,
   });
+
+  function handleRefreshResults() {
+    if (!expandedRace) return;
+    queryClient.invalidateQueries({ queryKey: ['results', season, expandedRace] });
+    toast.success('Resultaten worden opnieuw opgehaald...');
+  }
 
   const bets = getBets(season);
   const scores = getScores(season);
@@ -216,20 +223,30 @@ export default function Races() {
                   );
                 })}
 
-                <div className="flex gap-3 pt-2">
+                <div className="flex gap-3 pt-2 flex-wrap">
                   <Button onClick={() => handleSaveBets(race.round)}>
                     <CheckCircle2 className="w-4 h-4 mr-2" />
                     Save Bets
                   </Button>
                   {past && (
-                    <Button
-                      variant="secondary"
-                      onClick={() => raceResults && handleCalculateScores(race.round, raceResults)}
-                      disabled={resultsLoading || !raceResults || raceResults.length === 0}
-                    >
-                      <Calculator className="w-4 h-4 mr-2" />
-                      {resultsLoading ? 'Fetching results...' : 'Calculate Scores'}
-                    </Button>
+                    <>
+                      <Button
+                        variant="secondary"
+                        onClick={() => raceResults && handleCalculateScores(race.round, raceResults)}
+                        disabled={resultsLoading || !raceResults || raceResults.length === 0}
+                      >
+                        <Calculator className="w-4 h-4 mr-2" />
+                        {resultsLoading ? 'Fetching results...' : 'Calculate Scores'}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={handleRefreshResults}
+                        disabled={resultsFetching}
+                      >
+                        <RefreshCw className={`w-4 h-4 mr-2 ${resultsFetching ? 'animate-spin' : ''}`} />
+                        Refresh Results
+                      </Button>
+                    </>
                   )}
                 </div>
 

@@ -1,14 +1,36 @@
-import { useMemo } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trophy, TrendingUp, Flag } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Trophy, TrendingUp, Flag, Download, Upload } from 'lucide-react';
+import { toast } from 'sonner';
 import { getPlayers, getBets, getScores, getCurrentSeason } from '@/lib/storage';
 import { fetchRaces } from '@/lib/f1api';
+import { downloadCSV, importFromCSV } from '@/lib/csv';
 import type { Player } from '@/types/f1';
 
 export default function Dashboard() {
   const season = getCurrentSeason();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [, forceUpdate] = useState(0);
+
+  function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const result = importFromCSV(reader.result as string);
+        toast.success(`Geïmporteerd: ${result.players} spelers, ${result.bets} bets, ${result.scores} scores`);
+        forceUpdate(n => n + 1);
+      } catch {
+        toast.error('Fout bij importeren van CSV');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  }
   const players = getPlayers();
   const bets = getBets(season);
   const scores = getScores(season);
@@ -70,11 +92,22 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <h2 className="text-3xl font-extrabold tracking-tight">{season} Season</h2>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Flag className="w-4 h-4" />
-          {racesCompleted} / {races.length} races
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={downloadCSV}>
+            <Download className="w-4 h-4 mr-1" />
+            Export CSV
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+            <Upload className="w-4 h-4 mr-1" />
+            Import CSV
+          </Button>
+          <input ref={fileInputRef} type="file" accept=".csv" className="hidden" onChange={handleImport} />
+          <div className="flex items-center gap-2 text-sm text-muted-foreground ml-2">
+            <Flag className="w-4 h-4" />
+            {racesCompleted} / {races.length} races
+          </div>
         </div>
       </div>
 
