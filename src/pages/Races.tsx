@@ -223,20 +223,30 @@ export default function Races() {
                   );
                 })}
 
-                <div className="flex gap-3 pt-2">
+                <div className="flex gap-3 pt-2 flex-wrap">
                   <Button onClick={() => handleSaveBets(race.round)}>
                     <CheckCircle2 className="w-4 h-4 mr-2" />
                     Save Bets
                   </Button>
                   {past && (
-                    <Button
-                      variant="secondary"
-                      onClick={() => raceResults && handleCalculateScores(race.round, raceResults)}
-                      disabled={resultsLoading || !raceResults || raceResults.length === 0}
-                    >
-                      <Calculator className="w-4 h-4 mr-2" />
-                      {resultsLoading ? 'Fetching results...' : 'Calculate Scores'}
-                    </Button>
+                    <>
+                      <Button
+                        variant="secondary"
+                        onClick={() => raceResults && handleCalculateScores(race.round, raceResults)}
+                        disabled={resultsLoading || !raceResults || raceResults.length === 0}
+                      >
+                        <Calculator className="w-4 h-4 mr-2" />
+                        {resultsLoading ? 'Fetching results...' : 'Calculate Scores'}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={handleRefreshResults}
+                        disabled={resultsFetching}
+                      >
+                        <RefreshCw className={`w-4 h-4 mr-2 ${resultsFetching ? 'animate-spin' : ''}`} />
+                        Refresh Results
+                      </Button>
+                    </>
                   )}
                 </div>
 
