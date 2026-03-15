@@ -12,6 +12,25 @@ import type { Player } from '@/types/f1';
 
 export default function Dashboard() {
   const season = getCurrentSeason();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [, forceUpdate] = useState(0);
+
+  function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const result = importFromCSV(reader.result as string);
+        toast.success(`Geïmporteerd: ${result.players} spelers, ${result.bets} bets, ${result.scores} scores`);
+        forceUpdate(n => n + 1);
+      } catch {
+        toast.error('Fout bij importeren van CSV');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  }
   const players = getPlayers();
   const bets = getBets(season);
   const scores = getScores(season);
