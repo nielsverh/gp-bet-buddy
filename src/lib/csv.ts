@@ -1,4 +1,5 @@
 import type { StoredData } from './storage';
+import { exportData, importData, getCurrentSeason } from './storage';
 import type { Bet, RaceScore } from '@/types/f1';
 import { PLAYER_COLORS } from '@/types/f1';
 
@@ -82,6 +83,24 @@ export function exportToCSV(data: StoredData): string {
   }
 
   return lines.join('\n');
+}
+
+export function downloadCSV() {
+  const data = exportData();
+  const csv = exportToCSV(data);
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `f1-poule-${getCurrentSeason()}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+export function importFromCSV(content: string): { players: number; bets: number; scores: number } {
+  const { data, summary } = parseCSV(content);
+  importData(data);
+  return summary;
 }
 
 export interface ParsedCSVSummary {
