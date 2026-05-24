@@ -1,14 +1,29 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { Users, Plus, Trash2, UserPlus } from 'lucide-react';
-import { getPlayers, addPlayer, removePlayer } from '@/lib/storage';
+import { Users, Plus, Trash2, UserPlus, Download, Upload, Archive } from 'lucide-react';
+import { getPlayers, addPlayer, removePlayer, exportData, importData } from '@/lib/storage';
+import { exportToCSV, parseCSV } from '@/lib/csv';
+import type { ParsedCSVSummary } from '@/lib/csv';
+import type { StoredData } from '@/lib/storage';
 
 export default function Players() {
   const [newName, setNewName] = useState('');
   const [, forceUpdate] = useState(0);
+  const [pendingImport, setPendingImport] = useState<{ data: StoredData; summary: ParsedCSVSummary } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const players = getPlayers();
 
   function handleAdd() {
@@ -28,6 +43,55 @@ export default function Players() {
     removePlayer(id);
     toast.success(`${name} removed`);
     forceUpdate(n => n + 1);
+  }
+
+  function handleExport() {
+    const data = exportData();
+    const csv = exportToCSV(data);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `f1-poule-${data.currentSeason}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success('Poule geëxporteerd naar CSV');
+  }
+
+  function handleImportClick() {
+    fileInputRef.current?.click();
+  }
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const csv = evt.target?.result as string;
+        const parsed = parseCSV(csv);
+        if (parsed.summary.players === 0) {
+          toast.error('Geen spelers gevonden in dit CSV-bestand');
+          return;
+        }
+        setPendingImport(parsed);
+      } catch {
+        toast.error('Ongeldig CSV-bestand');
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function handleConfirmImport() {
+    if (!pendingImport) return;
+    importData(pendingImport.data);
+    setPendingImport(null);
+    forceUpdate(n => n + 1);
+    toast.success(
+      `Poule geïmporteerd: ${pendingImport.summary.players} spelers, ${pendingImport.summary.bets} bets, ${pendingImport.summary.scores} scores`
+    );
   }
 
   return (
@@ -103,17 +167,80 @@ export default function Players() {
         </CardContent>
       </Card>
 
+      {/* CSV Backup */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Archive className="w-5 h-5 text-primary" />
+            Poule Backup
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Exporteer de volledige poule (spelers, bets en scores) naar CSV, of importeer een eerder opgeslagen CSV.
+          </p>
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={handleExport} disabled={players.length === 0}>
+              <Download className="w-4 h-4 mr-2" />
+              Exporteer CSV
+            </Button>
+            <Button variant="outline" onClick={handleImportClick}>
+              <Upload className="w-4 h-4 mr-2" />
+              Importeer CSV
+            </Button>
+          </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv,text/csv"
+            className="hidden"
+            onChange={handleFileChange}
+          />
+          <p className="text-xs text-muted-foreground">
+            Let op: importeren overschrijft alle huidige data.
+          </p>
+        </CardContent>
+      </Card>
+
       <Card className="border-primary/20 bg-primary/5">
         <CardContent className="p-5">
           <h3 className="font-semibold mb-2">Scoring Rules</h3>
           <div className="text-sm text-muted-foreground space-y-1">
             <p><strong className="text-foreground">GP Winner bet:</strong> F1 scale based on how far off (25 exact, 18 one off, 15 two off...)</p>
-            <p><strong className="text-foreground">P10 bet:</strong> Same scale, symmetric (P9 & P11 = 18pts, P8 & P12 = 15pts...)</p>
+            <p><strong className="text-foreground">P10 bet:</strong> Same scale, symmetric (P9 &amp; P11 = 18pts, P8 &amp; P12 = 15pts...)</p>
             <p><strong className="text-foreground">First to Retire:</strong> 10 bonus points if exact, 0 otherwise</p>
             <p><strong className="text-foreground">Driver retires:</strong> 0 points for your P1/P10 bet if your pick DNFs</p>
           </div>
         </CardContent>
       </Card>
+
+      {/* Import confirmation dialog */}
+      <AlertDialog open={!!pendingImport} onOpenChange={open => !open && setPendingImport(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Poule importeren?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <p>Het CSV-bestand bevat:</p>
+                <ul className="list-disc list-inside text-sm space-y-1">
+                  <li><strong>{pendingImport?.summary.players}</strong> spelers</li>
+                  <li><strong>{pendingImport?.summary.bets}</strong> bets</li>
+                  <li><strong>{pendingImport?.summary.scores}</strong> scores</li>
+                </ul>
+                <p className="text-destructive font-medium pt-1">
+                  Dit overschrijft alle huidige data. Dit kan niet ongedaan worden gemaakt.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuleer</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmImport}>
+              Importeer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

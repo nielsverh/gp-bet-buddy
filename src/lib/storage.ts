@@ -1,7 +1,7 @@
 import type { Player, Bet, RaceScore } from '@/types/f1';
 import { PLAYER_COLORS } from '@/types/f1';
 
-interface StoredData {
+export interface StoredData {
   players: Player[];
   bets: Bet[];
   scores: RaceScore[];
@@ -142,5 +142,13 @@ export function getCurrentSeason(): number {
 export function setCurrentSeason(season: number) {
   const data = getAll();
   data.currentSeason = season;
+  saveAll(data);
+}
+
+export function exportData(): StoredData {
+  return getAll();
+}
+
+export function importData(data: StoredData) {
   saveAll(data);
 }

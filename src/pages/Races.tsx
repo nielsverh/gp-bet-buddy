@@ -9,7 +9,7 @@ import { Flag, CheckCircle2, Clock, ChevronDown, ChevronUp, Calculator, RefreshC
 import { fetchRaces, fetchDrivers, fetchRaceResults, isRetirement } from '@/lib/f1api';
 import { getPlayers, getBets, saveBet, saveScores, getCurrentSeason, getScores } from '@/lib/storage';
 import { calculateScore } from '@/lib/scoring';
-import type { Bet, Driver, Race, RaceResult } from '@/types/f1';
+import type { Bet, Race, RaceResult } from '@/types/f1';
 
 export default function Races() {
   const season = getCurrentSeason();
@@ -18,6 +18,7 @@ export default function Races() {
   const [expandedRace, setExpandedRace] = useState<number | null>(null);
   const [localBets, setLocalBets] = useState<Record<string, Partial<Bet>>>({});
   const [, forceUpdate] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const { data: races = [], isLoading: racesLoading } = useQuery({
     queryKey: ['races', season],
@@ -115,6 +116,52 @@ export default function Races() {
   const isRacePast = (race: Race) => new Date(race.date) < new Date();
   const hasResults = (round: number) => scores.some(s => s.raceRound === round);
 
+  async function handleRefreshAll() {
+    setIsRefreshing(true);
+    const currentBets = getBets(season);
+    const currentScores = getScores(season);
+
+    const unscored = races.filter(race =>
+      isRacePast(race) &&
+      currentBets.some(b => b.raceRound === race.round && b.season === season) &&
+      !currentScores.some(s => s.raceRound === race.round)
+    );
+
+    if (unscored.length === 0) {
+      toast.info('Alle afgelopen races zijn al gescoord');
+      setIsRefreshing(false);
+      return;
+    }
+
+    let calculated = 0;
+    let unavailable = 0;
+
+    for (const race of unscored) {
+      try {
+        const results = await fetchRaceResults(season, race.round);
+        if (results.length > 0) {
+          const roundBets = currentBets.filter(b => b.raceRound === race.round && b.season === season);
+          const newScores = roundBets.map(bet => calculateScore(bet, results));
+          saveScores(newScores);
+          calculated++;
+        } else {
+          unavailable++;
+        }
+      } catch {
+        unavailable++;
+      }
+    }
+
+    setIsRefreshing(false);
+    forceUpdate(n => n + 1);
+
+    if (calculated > 0) {
+      toast.success(`${calculated} race(s) gescoord${unavailable > 0 ? `, ${unavailable} nog niet beschikbaar` : ''}`);
+    } else {
+      toast.info('Geen nieuwe resultaten beschikbaar');
+    }
+  }
+
   if (players.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
@@ -130,7 +177,18 @@ export default function Races() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-3xl font-extrabold tracking-tight">{season} Races</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-3xl font-extrabold tracking-tight">{season} Races</h2>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleRefreshAll}
+          disabled={isRefreshing || races.length === 0}
+        >
+          <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+          {isRefreshing ? 'Checken...' : 'Refresh scores'}
+        </Button>
+      </div>
 
       {races.map(race => {
         const isExpanded = expandedRace === race.round;
