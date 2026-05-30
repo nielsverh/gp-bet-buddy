@@ -2,6 +2,7 @@ import type { StoredData } from './storage';
 import { exportData, importData, getCurrentSeason } from './storage';
 import type { Bet, RaceScore } from '@/types/f1';
 import { PLAYER_COLORS } from '@/types/f1';
+import { generateId } from './utils';
 
 function csvEscape(value: string): string {
   if (value.includes(',') || value.includes('"') || value.includes('\n')) {
@@ -140,7 +141,7 @@ export function parseCSV(csv: string): { data: StoredData; summary: ParsedCSVSum
       const [name, color] = fields;
       if (!name) continue;
       playersByName.set(name, {
-        id: crypto.randomUUID(),
+        id: generateId(),
         name,
         color: color || PLAYER_COLORS[playersByName.size % PLAYER_COLORS.length],
       });

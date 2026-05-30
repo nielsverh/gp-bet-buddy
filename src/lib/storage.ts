@@ -1,5 +1,6 @@
 import type { Player, Bet, RaceScore } from '@/types/f1';
 import { PLAYER_COLORS } from '@/types/f1';
+import { generateId } from './utils';
 
 export interface StoredData {
   players: Player[];
@@ -73,7 +74,7 @@ export function savePlayers(players: Player[]) {
 export function addPlayer(name: string): Player {
   const data = getAll();
   const player: Player = {
-    id: crypto.randomUUID(),
+    id: generateId(),
     name,
     color: PLAYER_COLORS[data.players.length % PLAYER_COLORS.length],
   };
