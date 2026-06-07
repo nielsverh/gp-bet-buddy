@@ -1,10 +1,15 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { Trophy, Flag, Users, BarChart3, Radio } from 'lucide-react';
+import { Trophy, Flag, Users, BarChart3 } from 'lucide-react';
 
+// NOTE: The "Live" page (src/pages/Live.tsx) is intentionally not routed/linked
+// right now. It depends on the OpenF1 API, which started requiring a paid API
+// key (€9.90/mo) for any access — including historical data — during the exact
+// window it would be live (30 min before/after a session). Until that's
+// resolved (paid key, or a viable free source), the page is unreachable so it
+// can never fire a single request. The code is left in place for later.
 const navItems = [
   { to: '/', label: 'Dashboard', icon: BarChart3 },
   { to: '/races', label: 'Races & Bets', icon: Flag },
-  { to: '/live', label: 'Live', icon: Radio },
   { to: '/players', label: 'Players', icon: Users },
 ];
 
