@@ -57,13 +57,27 @@ export const F1_POINTS_SCALE = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
 // Special "firstRetirement" bet value meaning "no one retires this race"
 export const NO_RETIREMENTS = 'NONE';
 
+// 20 hand-picked colors that read well as filled avatar circles with white text,
+// spread evenly around the hue wheel so players are easy to tell apart at a glance.
 export const PLAYER_COLORS = [
   'hsl(0, 72%, 51%)',    // Red
-  'hsl(210, 70%, 55%)',  // Blue
+  'hsl(14, 80%, 52%)',   // Vermilion
+  'hsl(28, 85%, 50%)',   // Orange
   'hsl(38, 92%, 50%)',   // Amber
+  'hsl(48, 85%, 45%)',   // Gold
+  'hsl(65, 60%, 42%)',   // Olive
+  'hsl(88, 55%, 42%)',   // Lime
+  'hsl(110, 55%, 42%)',  // Grass green
   'hsl(142, 60%, 45%)',  // Green
+  'hsl(165, 60%, 40%)',  // Teal green
+  'hsl(185, 70%, 40%)',  // Teal
+  'hsl(195, 80%, 45%)',  // Cyan
+  'hsl(210, 70%, 55%)',  // Blue
+  'hsl(225, 65%, 58%)',  // Royal blue
+  'hsl(245, 60%, 60%)',  // Indigo
+  'hsl(265, 55%, 58%)',  // Violet
   'hsl(280, 60%, 55%)',  // Purple
-  'hsl(190, 80%, 45%)',  // Cyan
+  'hsl(305, 55%, 52%)',  // Magenta
   'hsl(330, 70%, 55%)',  // Pink
-  'hsl(25, 90%, 55%)',   // Orange
+  'hsl(350, 75%, 55%)',  // Rose
 ];

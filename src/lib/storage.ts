@@ -83,6 +83,15 @@ export function addPlayer(name: string): Player {
   return player;
 }
 
+export function setPlayerColor(id: string, color: string) {
+  const data = getAll();
+  const player = data.players.find(p => p.id === id);
+  if (player) {
+    player.color = color;
+    saveAll(data);
+  }
+}
+
 export function removePlayer(id: string) {
   const data = getAll();
   data.players = data.players.filter(p => p.id !== id);

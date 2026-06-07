@@ -12,12 +12,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { toast } from 'sonner';
-import { Users, Plus, Trash2, UserPlus, Download, Upload, Archive } from 'lucide-react';
-import { getPlayers, addPlayer, removePlayer, exportData, importData } from '@/lib/storage';
+import { Users, Plus, Trash2, UserPlus, Download, Upload, Archive, Check } from 'lucide-react';
+import { getPlayers, addPlayer, removePlayer, setPlayerColor, exportData, importData } from '@/lib/storage';
 import { exportToCSV, parseCSV } from '@/lib/csv';
 import type { ParsedCSVSummary } from '@/lib/csv';
 import type { StoredData } from '@/lib/storage';
+import { PLAYER_COLORS } from '@/types/f1';
 
 export default function Players() {
   const [newName, setNewName] = useState('');
@@ -36,6 +38,11 @@ export default function Players() {
     addPlayer(name);
     setNewName('');
     toast.success(`${name} joined the poule!`);
+    forceUpdate(n => n + 1);
+  }
+
+  function handleColorChange(id: string, color: string) {
+    setPlayerColor(id, color);
     forceUpdate(n => n + 1);
   }
 
@@ -144,12 +151,35 @@ export default function Players() {
                   className="flex items-center justify-between p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors"
                 >
                   <div className="flex items-center gap-3">
-                    <div
-                      className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white"
-                      style={{ backgroundColor: player.color }}
-                    >
-                      {player.name.charAt(0).toUpperCase()}
-                    </div>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button
+                          type="button"
+                          title="Kies een kleur"
+                          className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white ring-offset-2 ring-offset-background transition-shadow hover:ring-2 hover:ring-foreground/30 focus:outline-none focus:ring-2 focus:ring-foreground/40"
+                          style={{ backgroundColor: player.color }}
+                        >
+                          {player.name.charAt(0).toUpperCase()}
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-3">
+                        <p className="text-xs text-muted-foreground mb-2">Kies een kleur voor {player.name}</p>
+                        <div className="grid grid-cols-5 gap-2">
+                          {PLAYER_COLORS.map(color => (
+                            <button
+                              key={color}
+                              type="button"
+                              title={color}
+                              onClick={() => handleColorChange(player.id, color)}
+                              className="w-7 h-7 rounded-full flex items-center justify-center transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-foreground/40"
+                              style={{ backgroundColor: color }}
+                            >
+                              {player.color === color && <Check className="w-4 h-4 text-white drop-shadow" />}
+                            </button>
+                          ))}
+                        </div>
+                      </PopoverContent>
+                    </Popover>
                     <span className="font-medium">{player.name}</span>
                   </div>
                   <Button
