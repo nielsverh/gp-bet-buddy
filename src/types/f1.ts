@@ -9,6 +9,7 @@ export interface Race {
   raceName: string;
   circuitName: string;
   date: string;
+  time?: string; // UTC time of the race start, e.g. "15:00:00Z" (when known)
   country: string;
 }
 

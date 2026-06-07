@@ -12,6 +12,7 @@ export async function fetchRaces(season: number): Promise<Race[]> {
     raceName: r.raceName,
     circuitName: r.Circuit.circuitName,
     date: r.date,
+    time: r.time,
     country: r.Circuit.Location.country,
   }));
 }

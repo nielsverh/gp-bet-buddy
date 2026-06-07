@@ -1,9 +1,10 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { Trophy, Flag, Users, BarChart3 } from 'lucide-react';
+import { Trophy, Flag, Users, BarChart3, Radio } from 'lucide-react';
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: BarChart3 },
   { to: '/races', label: 'Races & Bets', icon: Flag },
+  { to: '/live', label: 'Live', icon: Radio },
   { to: '/players', label: 'Players', icon: Users },
 ];
 
