@@ -208,7 +208,7 @@ export default function Players() {
           <div className="text-sm text-muted-foreground space-y-1">
             <p><strong className="text-foreground">GP Winner bet:</strong> F1 scale based on how far off (25 exact, 18 one off, 15 two off...)</p>
             <p><strong className="text-foreground">P10 bet:</strong> Same scale, symmetric (P9 &amp; P11 = 18pts, P8 &amp; P12 = 15pts...)</p>
-            <p><strong className="text-foreground">First to Retire:</strong> 10 bonus points if exact, 0 otherwise</p>
+            <p><strong className="text-foreground">First to Retire:</strong> 10 bonus points if exact, or if you pick "Niemand valt uit" and the race finishes with zero retirements, 0 otherwise</p>
             <p><strong className="text-foreground">Driver retires:</strong> 0 points for your P1/P10 bet if your pick DNFs</p>
           </div>
         </CardContent>

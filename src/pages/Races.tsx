@@ -10,6 +10,7 @@ import { fetchRaces, fetchDrivers, fetchRaceResults, isRetirement } from '@/lib/
 import { getPlayers, getBets, saveBet, saveScores, getCurrentSeason, getScores } from '@/lib/storage';
 import { calculateScore } from '@/lib/scoring';
 import type { Bet, Race, RaceResult } from '@/types/f1';
+import { NO_RETIREMENTS } from '@/types/f1';
 
 export default function Races() {
   const season = getCurrentSeason();
@@ -274,6 +275,7 @@ export default function Races() {
                             value={getCurrentBetValue(player.id, race.round, 'firstRetirement')}
                             onSelect={v => updateLocalBet(player.id, race.round, 'firstRetirement', v)}
                             placeholder="Type driver name..."
+                            extraOptions={[{ id: NO_RETIREMENTS, label: 'Niemand valt uit' }]}
                           />
                         </div>
                       </div>

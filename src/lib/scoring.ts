@@ -1,5 +1,5 @@
 import type { Bet, RaceResult, RaceScore } from '@/types/f1';
-import { F1_POINTS_SCALE } from '@/types/f1';
+import { F1_POINTS_SCALE, NO_RETIREMENTS } from '@/types/f1';
 import { isRetirement, isDNS } from './f1api';
 
 export function calculateScore(bet: Bet, results: RaceResult[]): RaceScore {
@@ -30,11 +30,16 @@ export function calculateScore(bet: Bet, results: RaceResult[]): RaceScore {
 
   // First retirement scoring (exclude DNS)
   const retirees = results.filter(r => isRetirement(r.status) && !isDNS(r.status));
-  if (retirees.length > 0 && bet.firstRetirement) {
+  if (bet.firstRetirement === NO_RETIREMENTS) {
+    // Bet on "nobody retires" — correct if the race had zero retirements
+    if (retirees.length === 0) {
+      score.retirementPoints = 10;
+    }
+  } else if (retirees.length > 0 && bet.firstRetirement) {
     // Retiree with highest position number = fewest laps completed = retired first
     const sortedRetirees = retirees.sort((a, b) => b.position - a.position);
     const firstToRetire = sortedRetirees[0];
-    
+
     if (firstToRetire.driver.driverId === bet.firstRetirement) {
       score.retirementPoints = 10;
     }

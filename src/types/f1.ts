@@ -54,6 +54,9 @@ export interface SeasonData {
 // F1 points scale for position difference
 export const F1_POINTS_SCALE = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
 
+// Special "firstRetirement" bet value meaning "no one retires this race"
+export const NO_RETIREMENTS = 'NONE';
+
 export const PLAYER_COLORS = [
   'hsl(0, 72%, 51%)',    // Red
   'hsl(210, 70%, 55%)',  // Blue
