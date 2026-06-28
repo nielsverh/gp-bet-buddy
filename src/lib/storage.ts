@@ -20,12 +20,32 @@ const DEFAULT_DATA: StoredData = {
 let cache: StoredData | null = null;
 let saveTimeout: ReturnType<typeof setTimeout> | null = null;
 
+// One-time self-heal for data saved before RaceScore had a `season` field:
+// those old scores deserialize with season === undefined, which then shows up
+// as an "undefined" entry in the season picker. Backfill it from the matching
+// bet (same player + round), falling back to the poule's current season if no
+// bet is found. Returns true if anything was changed (so callers know to persist).
+function migrateLegacyData(data: StoredData): boolean {
+  let changed = false;
+  for (const score of data.scores) {
+    if (!Number.isFinite(score.season)) {
+      const matchingBet = data.bets.find(
+        b => b.playerId === score.playerId && b.raceRound === score.raceRound
+      );
+      score.season = matchingBet?.season ?? data.currentSeason;
+      changed = true;
+    }
+  }
+  return changed;
+}
+
 // Initial load from server
 export async function initStorage(): Promise<void> {
   try {
     const res = await fetch('/api/data');
     if (res.ok) {
       cache = await res.json();
+      if (migrateLegacyData(cache)) saveAll(cache);
       return;
     }
   } catch {
@@ -33,6 +53,7 @@ export async function initStorage(): Promise<void> {
   }
   const raw = localStorage.getItem('f1-betting-poule');
   cache = raw ? JSON.parse(raw) : { ...DEFAULT_DATA };
+  if (migrateLegacyData(cache)) saveAll(cache);
 }
 
 function getAll(): StoredData {
@@ -40,6 +61,7 @@ function getAll(): StoredData {
     // Sync fallback for first render before initStorage completes
     const raw = localStorage.getItem('f1-betting-poule');
     cache = raw ? JSON.parse(raw) : { ...DEFAULT_DATA };
+    if (migrateLegacyData(cache)) saveAll(cache);
   }
   return cache;
 }
@@ -158,8 +180,8 @@ export function setCurrentSeason(season: number) {
 export function getAvailableSeasons(): number[] {
   const data = getAll();
   const seasons = new Set<number>();
-  for (const bet of data.bets) seasons.add(bet.season);
-  for (const score of data.scores) seasons.add(score.season);
+  for (const bet of data.bets) if (Number.isFinite(bet.season)) seasons.add(bet.season);
+  for (const score of data.scores) if (Number.isFinite(score.season)) seasons.add(score.season);
   seasons.add(new Date().getFullYear());
   return Array.from(seasons).sort((a, b) => b - a);
 }

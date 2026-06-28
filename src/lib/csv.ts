@@ -89,8 +89,8 @@ export function exportToCSV(data: StoredData): string {
 // spans multiple — used for a more accurate export filename than a single year.
 export function seasonRangeLabel(data: StoredData): string {
   const seasons = new Set<number>();
-  for (const bet of data.bets) seasons.add(bet.season);
-  for (const score of data.scores) seasons.add(score.season);
+  for (const bet of data.bets) if (Number.isFinite(bet.season)) seasons.add(bet.season);
+  for (const score of data.scores) if (Number.isFinite(score.season)) seasons.add(score.season);
   if (seasons.size === 0) return String(data.currentSeason);
   const sorted = Array.from(seasons).sort((a, b) => a - b);
   const min = sorted[0];
