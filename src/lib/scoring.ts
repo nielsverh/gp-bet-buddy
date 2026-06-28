@@ -6,6 +6,7 @@ export function calculateScore(bet: Bet, results: RaceResult[]): RaceScore {
   const score: RaceScore = {
     playerId: bet.playerId,
     raceRound: bet.raceRound,
+    season: bet.season,
     gpWinnerPoints: 0,
     p10Points: 0,
     retirementPoints: 0,

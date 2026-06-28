@@ -121,17 +121,14 @@ export function saveBet(bet: Bet) {
 
 export function getScores(season?: number): RaceScore[] {
   const data = getAll();
-  if (season) return data.scores.filter(s => {
-    const bet = data.bets.find(b => b.playerId === s.playerId && b.raceRound === s.raceRound);
-    return bet?.season === season;
-  });
+  if (season) return data.scores.filter(s => s.season === season);
   return data.scores;
 }
 
 export function saveScore(score: RaceScore) {
   const data = getAll();
   const idx = data.scores.findIndex(
-    s => s.playerId === score.playerId && s.raceRound === score.raceRound
+    s => s.playerId === score.playerId && s.raceRound === score.raceRound && s.season === score.season
   );
   if (idx >= 0) {
     data.scores[idx] = score;
@@ -155,10 +152,65 @@ export function setCurrentSeason(season: number) {
   saveAll(data);
 }
 
+// Seasons worth showing in the season picker: every season we actually have
+// bets/scores for, plus the real-world current year so a brand new season
+// (with no data yet) is selectable as soon as it starts. Sorted most-recent-first.
+export function getAvailableSeasons(): number[] {
+  const data = getAll();
+  const seasons = new Set<number>();
+  for (const bet of data.bets) seasons.add(bet.season);
+  for (const score of data.scores) seasons.add(score.season);
+  seasons.add(new Date().getFullYear());
+  return Array.from(seasons).sort((a, b) => b - a);
+}
+
 export function exportData(): StoredData {
   return getAll();
 }
 
-export function importData(data: StoredData) {
+// Merges incoming players/bets/scores into the current poule rather than
+// replacing it, so importing an old season's CSV adds that season's history
+// instead of wiping out whatever is currently stored (e.g. the live season).
+// Players are matched by name (case-insensitive); bets/scores are matched by
+// player + race round + season and upserted.
+export function importData(incoming: StoredData) {
+  const data = getAll();
+
+  const existingByName = new Map(data.players.map(p => [p.name.toLowerCase(), p]));
+  const incomingIdToExistingId = new Map<string, string>();
+
+  for (const incomingPlayer of incoming.players) {
+    const key = incomingPlayer.name.toLowerCase();
+    const existing = existingByName.get(key);
+    if (existing) {
+      incomingIdToExistingId.set(incomingPlayer.id, existing.id);
+    } else {
+      const player: Player = { ...incomingPlayer };
+      data.players.push(player);
+      existingByName.set(key, player);
+      incomingIdToExistingId.set(incomingPlayer.id, player.id);
+    }
+  }
+
+  for (const incomingBet of incoming.bets) {
+    const playerId = incomingIdToExistingId.get(incomingBet.playerId);
+    if (!playerId) continue;
+    const bet: Bet = { ...incomingBet, playerId };
+    const idx = data.bets.findIndex(
+      b => b.playerId === bet.playerId && b.raceRound === bet.raceRound && b.season === bet.season
+    );
+    if (idx >= 0) data.bets[idx] = bet; else data.bets.push(bet);
+  }
+
+  for (const incomingScore of incoming.scores) {
+    const playerId = incomingIdToExistingId.get(incomingScore.playerId);
+    if (!playerId) continue;
+    const score: RaceScore = { ...incomingScore, playerId };
+    const idx = data.scores.findIndex(
+      s => s.playerId === score.playerId && s.raceRound === score.raceRound && s.season === score.season
+    );
+    if (idx >= 0) data.scores[idx] = score; else data.scores.push(score);
+  }
+
   saveAll(data);
 }

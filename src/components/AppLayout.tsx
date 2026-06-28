@@ -1,5 +1,6 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { Trophy, Flag, Users, BarChart3 } from 'lucide-react';
+import SeasonSelector from '@/components/SeasonSelector';
 
 // NOTE: The "Live" page (src/pages/Live.tsx) is intentionally not routed/linked
 // right now. It depends on the OpenF1 API, which started requiring a paid API
@@ -26,7 +27,8 @@ export default function AppLayout() {
               F1 Poule
             </h1>
           </div>
-          <nav className="flex items-center gap-1">
+          <nav className="flex items-center gap-2">
+            <SeasonSelector />
             {navItems.map(item => (
               <NavLink
                 key={item.to}

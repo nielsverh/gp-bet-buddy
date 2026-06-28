@@ -39,6 +39,7 @@ export interface Bet {
 export interface RaceScore {
   playerId: string;
   raceRound: number;
+  season: number;
   gpWinnerPoints: number;
   p10Points: number;
   retirementPoints: number;

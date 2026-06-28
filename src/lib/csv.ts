@@ -1,5 +1,5 @@
 import type { StoredData } from './storage';
-import { exportData, importData, getCurrentSeason } from './storage';
+import { exportData, importData } from './storage';
 import type { Bet, RaceScore } from '@/types/f1';
 import { PLAYER_COLORS } from '@/types/f1';
 import { generateId } from './utils';
@@ -70,10 +70,9 @@ export function exportToCSV(data: StoredData): string {
   lines.push(csvRow('season', 'round', 'player', 'gpWinnerPoints', 'p10Points', 'retirementPoints', 'total'));
   for (const score of data.scores) {
     const player = data.players.find(p => p.id === score.playerId);
-    const bet = data.bets.find(b => b.playerId === score.playerId && b.raceRound === score.raceRound);
-    if (!player || !bet) continue;
+    if (!player) continue;
     lines.push(csvRow(
-      String(bet.season),
+      String(score.season),
       String(score.raceRound),
       player.name,
       String(score.gpWinnerPoints),
@@ -86,6 +85,19 @@ export function exportToCSV(data: StoredData): string {
   return lines.join('\n');
 }
 
+// e.g. "2026" when everything is one season, or "2024-2026" when the export
+// spans multiple — used for a more accurate export filename than a single year.
+export function seasonRangeLabel(data: StoredData): string {
+  const seasons = new Set<number>();
+  for (const bet of data.bets) seasons.add(bet.season);
+  for (const score of data.scores) seasons.add(score.season);
+  if (seasons.size === 0) return String(data.currentSeason);
+  const sorted = Array.from(seasons).sort((a, b) => a - b);
+  const min = sorted[0];
+  const max = sorted[sorted.length - 1];
+  return min === max ? String(min) : `${min}-${max}`;
+}
+
 export function downloadCSV() {
   const data = exportData();
   const csv = exportToCSV(data);
@@ -93,12 +105,12 @@ export function downloadCSV() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `f1-poule-${getCurrentSeason()}.csv`;
+  a.download = `f1-poule-${seasonRangeLabel(data)}.csv`;
   a.click();
   URL.revokeObjectURL(url);
 }
 
-export function importFromCSV(content: string): { players: number; bets: number; scores: number } {
+export function importFromCSV(content: string): ParsedCSVSummary {
   const { data, summary } = parseCSV(content);
   importData(data);
   return summary;
@@ -108,6 +120,7 @@ export interface ParsedCSVSummary {
   players: number;
   bets: number;
   scores: number;
+  seasons: number[];
 }
 
 export function parseCSV(csv: string): { data: StoredData; summary: ParsedCSVSummary } {
@@ -160,12 +173,15 @@ export function parseCSV(csv: string): { data: StoredData; summary: ParsedCSVSum
         firstRetirement: firstRetirement || '',
       });
     } else if (section === 'SCORES') {
-      const [, round, playerName, gpWinnerPoints, p10Points, retirementPoints, total] = fields;
+      const [season, round, playerName, gpWinnerPoints, p10Points, retirementPoints, total] = fields;
       const player = playersByName.get(playerName);
       if (!player) continue;
+      const seasonNum = parseInt(season);
+      if (seasonNum) currentSeason = Math.max(currentSeason, seasonNum);
       scores.push({
         playerId: player.id,
         raceRound: parseInt(round),
+        season: seasonNum,
         gpWinnerPoints: parseInt(gpWinnerPoints) || 0,
         p10Points: parseInt(p10Points) || 0,
         retirementPoints: parseInt(retirementPoints) || 0,
@@ -173,6 +189,10 @@ export function parseCSV(csv: string): { data: StoredData; summary: ParsedCSVSum
       });
     }
   }
+
+  const seasons = Array.from(new Set([...bets.map(b => b.season), ...scores.map(s => s.season)]))
+    .filter(Boolean)
+    .sort((a, b) => a - b);
 
   return {
     data: {
@@ -185,6 +205,7 @@ export function parseCSV(csv: string): { data: StoredData; summary: ParsedCSVSum
       players: playersByName.size,
       bets: bets.length,
       scores: scores.length,
+      seasons,
     },
   };
 }

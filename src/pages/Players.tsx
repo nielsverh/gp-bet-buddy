@@ -15,13 +15,15 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { toast } from 'sonner';
 import { Users, Plus, Trash2, UserPlus, Download, Upload, Archive, Check } from 'lucide-react';
-import { getPlayers, addPlayer, removePlayer, setPlayerColor, exportData, importData } from '@/lib/storage';
-import { exportToCSV, parseCSV } from '@/lib/csv';
+import { getPlayers, addPlayer, removePlayer, setPlayerColor, importData } from '@/lib/storage';
+import { downloadCSV, parseCSV } from '@/lib/csv';
 import type { ParsedCSVSummary } from '@/lib/csv';
 import type { StoredData } from '@/lib/storage';
 import { PLAYER_COLORS } from '@/types/f1';
+import { useSeason } from '@/contexts/SeasonContext';
 
 export default function Players() {
+  const { setSelectedSeason, refreshAvailableSeasons } = useSeason();
   const [newName, setNewName] = useState('');
   const [, forceUpdate] = useState(0);
   const [pendingImport, setPendingImport] = useState<{ data: StoredData; summary: ParsedCSVSummary } | null>(null);
@@ -53,15 +55,7 @@ export default function Players() {
   }
 
   function handleExport() {
-    const data = exportData();
-    const csv = exportToCSV(data);
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `f1-poule-${data.currentSeason}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
+    downloadCSV();
     toast.success('Poule geëxporteerd naar CSV');
   }
 
@@ -94,6 +88,10 @@ export default function Players() {
   function handleConfirmImport() {
     if (!pendingImport) return;
     importData(pendingImport.data);
+    refreshAvailableSeasons();
+    if (pendingImport.summary.seasons.length > 0) {
+      setSelectedSeason(pendingImport.summary.seasons[pendingImport.summary.seasons.length - 1]);
+    }
     setPendingImport(null);
     forceUpdate(n => n + 1);
     toast.success(
@@ -227,7 +225,9 @@ export default function Players() {
             onChange={handleFileChange}
           />
           <p className="text-xs text-muted-foreground">
-            Let op: importeren overschrijft alle huidige data.
+            Importeren voegt de spelers, bets en scores uit het bestand toe aan je huidige poule
+            (spelers worden gematcht op naam; bestaande bets/scores voor dezelfde speler, ronde
+            en seizoen worden bijgewerkt). Niets wordt verwijderd.
           </p>
         </CardContent>
       </Card>
@@ -256,9 +256,15 @@ export default function Players() {
                   <li><strong>{pendingImport?.summary.players}</strong> spelers</li>
                   <li><strong>{pendingImport?.summary.bets}</strong> bets</li>
                   <li><strong>{pendingImport?.summary.scores}</strong> scores</li>
+                  {pendingImport && pendingImport.summary.seasons.length > 0 && (
+                    <li>seizoen{pendingImport.summary.seasons.length > 1 ? 'en' : ''}:{' '}
+                      <strong>{pendingImport.summary.seasons.join(', ')}</strong>
+                    </li>
+                  )}
                 </ul>
-                <p className="text-destructive font-medium pt-1">
-                  Dit overschrijft alle huidige data. Dit kan niet ongedaan worden gemaakt.
+                <p className="pt-1">
+                  Dit wordt toegevoegd aan je huidige poule (spelers gematcht op naam; bestaande
+                  bets/scores voor dezelfde speler, ronde en seizoen worden bijgewerkt). Niets wordt verwijderd.
                 </p>
               </div>
             </AlertDialogDescription>

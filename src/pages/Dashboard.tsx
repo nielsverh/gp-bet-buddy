@@ -5,13 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Trophy, TrendingUp, Flag, Download, Upload } from 'lucide-react';
 import { toast } from 'sonner';
-import { getPlayers, getBets, getScores, getCurrentSeason } from '@/lib/storage';
+import { getPlayers, getBets, getScores } from '@/lib/storage';
 import { fetchRaces } from '@/lib/f1api';
 import { downloadCSV, importFromCSV } from '@/lib/csv';
+import { useSeason } from '@/contexts/SeasonContext';
 import type { Player } from '@/types/f1';
 
 export default function Dashboard() {
-  const season = getCurrentSeason();
+  const { selectedSeason: season, setSelectedSeason, refreshAvailableSeasons } = useSeason();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [, forceUpdate] = useState(0);
 
@@ -23,6 +24,8 @@ export default function Dashboard() {
       try {
         const result = importFromCSV(reader.result as string);
         toast.success(`Geïmporteerd: ${result.players} spelers, ${result.bets} bets, ${result.scores} scores`);
+        refreshAvailableSeasons();
+        if (result.seasons.length > 0) setSelectedSeason(result.seasons[result.seasons.length - 1]);
         forceUpdate(n => n + 1);
       } catch {
         toast.error('Fout bij importeren van CSV');

@@ -7,13 +7,14 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Flag, CheckCircle2, Clock, ChevronDown, ChevronUp, Calculator, RefreshCw } from 'lucide-react';
 import { fetchRaces, fetchDrivers, fetchRaceResults, isRetirement } from '@/lib/f1api';
-import { getPlayers, getBets, saveBet, saveScores, getCurrentSeason, getScores } from '@/lib/storage';
+import { getPlayers, getBets, saveBet, saveScores, getScores } from '@/lib/storage';
 import { calculateScore } from '@/lib/scoring';
+import { useSeason } from '@/contexts/SeasonContext';
 import type { Bet, Race, RaceResult } from '@/types/f1';
 import { NO_RETIREMENTS } from '@/types/f1';
 
 export default function Races() {
-  const season = getCurrentSeason();
+  const { selectedSeason: season } = useSeason();
   const players = getPlayers();
   const queryClient = useQueryClient();
   const [expandedRace, setExpandedRace] = useState<number | null>(null);
