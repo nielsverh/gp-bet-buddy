@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { Trophy, Flag, Users, BarChart3 } from 'lucide-react';
+import { Trophy, Flag, Users, BarChart3, ScrollText } from 'lucide-react';
 import SeasonSelector from '@/components/SeasonSelector';
 
 // NOTE: The "Live" page (src/pages/Live.tsx) is intentionally not routed/linked
@@ -12,6 +12,7 @@ const navItems = [
   { to: '/', label: 'Dashboard', icon: BarChart3 },
   { to: '/races', label: 'Races & Bets', icon: Flag },
   { to: '/players', label: 'Players', icon: Users },
+  { to: '/results', label: 'Uitslagen', icon: ScrollText },
 ];
 
 export default function AppLayout() {
