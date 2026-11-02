@@ -36,7 +36,37 @@ function migrateLegacyData(data: StoredData): boolean {
       changed = true;
     }
   }
+
+  // Legacy scores that got recalculated before the backfill above existed were
+  // pushed as a second copy (saveScore couldn't match season undefined), and
+  // the backfill then gave the old copy the same season — leaving duplicate
+  // player + round + season entries that the Dashboard counted twice. Keep only
+  // the last (most recently saved) entry per key.
+  const scoreKey = (s: RaceScore) => `${s.playerId}|${s.raceRound}|${s.season}`;
+  const dedupedScores = dedupeLastWins(data.scores, scoreKey);
+  if (dedupedScores.length !== data.scores.length) {
+    data.scores = dedupedScores;
+    changed = true;
+  }
+
+  const betKey = (b: Bet) => `${b.playerId}|${b.raceRound}|${b.season}`;
+  const dedupedBets = dedupeLastWins(data.bets, betKey);
+  if (dedupedBets.length !== data.bets.length) {
+    data.bets = dedupedBets;
+    changed = true;
+  }
+
   return changed;
+}
+
+function dedupeLastWins<T>(items: T[], key: (item: T) => string): T[] {
+  const byKey = new Map<string, T>();
+  for (const item of items) {
+    const k = key(item);
+    byKey.delete(k); // re-insert so the surviving entry keeps the later position
+    byKey.set(k, item);
+  }
+  return Array.from(byKey.values());
 }
 
 // Initial load from server
